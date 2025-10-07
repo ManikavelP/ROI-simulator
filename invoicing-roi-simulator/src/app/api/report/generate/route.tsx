@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import React from "react";
-// 1. Change the import to use 'renderToBuffer' from the '/node' entrypoint
-import { renderToBuffer } from "@react-pdf/renderer/node";
+import { renderToBuffer } from "@react-pdf/renderer"; // Use the main import
 import { ReportDocument } from "@/components/ReportDocument";
+
+// Force this route to run on the Node.js runtime
+export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
@@ -18,13 +20,17 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Render the React component to a Buffer
+    // Use renderToBuffer to directly create the PDF buffer in one step
     const pdfBuffer = await renderToBuffer(
       <ReportDocument data={{ results, inputs, scenario_name }} />
     );
 
-    // 3. Return the buffer in the Response (no 'as any' needed)
-    return new Response(pdfBuffer, {
+    // Convert Node.js Buffer to Uint8Array for the Response constructor
+    const pdfUint8Array = new Uint8Array(pdfBuffer);
+
+    // Return the buffer directly in the response
+    return new Response(pdfUint8Array, {
+      status: 200,
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": 'attachment; filename="ROI_Report.pdf"',
